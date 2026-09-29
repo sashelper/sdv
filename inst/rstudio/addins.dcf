@@ -1,0 +1,9 @@
+Name: Open in StatDataViewer
+Description: Send the selected expression, or the object under the cursor, to StatDataViewer.
+Binding: sdv_addin_view
+Interactive: false
+
+Name: Open object in StatDataViewer...
+Description: Type an object name or R expression to send to StatDataViewer.
+Binding: sdv_addin_prompt
+Interactive: false

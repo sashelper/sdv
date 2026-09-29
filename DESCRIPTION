@@ -1,0 +1,25 @@
+Package: sdv
+Type: Package
+Title: Open R Objects in 'StatDataViewer' from 'RStudio'
+Version: 0.1.0
+Authors@R: person("Xiaoguang", "Yan", email = "yanxiaoguang@gmail.com", role = c("aut", "cre"))
+Description: An 'RStudio' addin that sends objects from the R session (data
+    frames, matrices, tables, vectors, lists, time series, functions, models
+    and more) to the 'StatDataViewer' desktop application
+    <https://statdataviewer.com/>. Each object is converted into a plain
+    data frame that the viewer's R data reader can display, or into a text
+    document, written to a temporary file and opened in the running viewer.
+    Objects can be sent with a keyboard shortcut, from the 'Addins' menu, or
+    through View().
+License: MIT + file LICENSE
+URL: https://github.com/sashelper/sdv, https://sashelper.r-universe.dev/sdv
+BugReports: https://github.com/sashelper/sdv/issues
+SystemRequirements: StatDataViewer (macOS or Windows),
+    <https://statdataviewer.com/>
+Encoding: UTF-8
+Depends: R (>= 4.1)
+Imports: rstudioapi, stats, utils, methods
+Suggests: testthat (>= 3.0.0), withr, bit64, zoo, xts
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0
