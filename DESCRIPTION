@@ -1,7 +1,7 @@
 Package: sdv
 Type: Package
 Title: Open R Objects in 'StatDataViewer' from 'RStudio'
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: person("Xiaoguang", "Yan", email = "yanxiaoguang@gmail.com", role = c("aut", "cre"))
 Description: An 'RStudio' addin that sends objects from the R session (data
     frames, matrices, tables, vectors, lists, time series, functions, models,

@@ -42,5 +42,7 @@ sdv_write <- function(payload) {
     path <- file.path(dir, paste0(safe, ".", payload$ext))
     writeLines(sdv_utf8(payload$data), path, useBytes = TRUE)
   }
-  path
+  # The path as the viewer gets it (sdv_launch() normalizes it too): on
+  # Windows file.path() joined the normalized directory with a forward slash.
+  normalizePath(path, mustWork = TRUE)
 }

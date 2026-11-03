@@ -1,3 +1,8 @@
+# sdv 0.3.1
+
+* The path `sdv_view()` returns is the one handed to the viewer: on Windows it
+  mixed `\\` and `/` (the test for it failed there on CI).
+
 # sdv 0.3.0
 
 * `sdv_connect()`: a live connection to StatDataViewer. The app lists this
