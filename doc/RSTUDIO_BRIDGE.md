@@ -1,6 +1,6 @@
 # RStudio ⇄ StatDataViewer 会话通道：协议与改动清单
 
-**状态**：设计稿，待审阅。2026-11-02。
+**状态**：已实现（sdv 0.3.0 `R/bridge.R`；StatDataViewer `rstudio/rstudiobridge.{h,cpp}` + `mainwindow/mainwindow_rstudio.cpp`）。第 8 节的六个决定全部按推荐选项落地。2026-11-02。
 **目标**：把 RStudio 会话的全局环境放进 StatDataViewer 左侧树，双击即开，每条命令后自动刷新；同时让 ⌘⇧V 这类发送不再依赖 `open -b`，由 SDV 自己决定窗口要不要跳到当前 Space。
 
 ---
@@ -100,7 +100,7 @@ R 忙着跑长计算时所有请求都没有回应；SDV 在节点上显示 "R b
 
 | 文件 | 改动 |
 |---|---|
-| `DESCRIPTION` | Suggests 加 `websocket`, `later`, `jsonlite`？—— 不加 jsonlite，自己拼这几种固定结构的 JSON，和 `shortcut.R` 的 flat JSON 一个路数；或者直接 Imports jsonlite，它几乎人人都装。**待定** |
+| `DESCRIPTION` | Imports 加 `jsonlite`；Suggests 加 `websocket`, `later`, `httpuv`（测试用的假 Viewer） |
 | `R/bridge.R` 新 | `sdv_connect(port, token, auto = TRUE)`、`sdv_disconnect()`、`sdv_connected()`；`.sdv_state$ws`；`onOpen` 发 hello + inventory；`onMessage` 分发；`onClose` 用 `later` 定时重连（5 s 起，封顶 60 s）；所有回调 `tryCatch`，错误只 `message()` 一次，绝不抛进用户控制台 |
 | `R/bridge.R` | `addTaskCallback("sdv")`：每条顶层命令后算清单摘要（name/class/dim/sizeBytes 拼接），变了才推 `r.inventory`。性能要测：`object.size()` 对巨大 list 会遍历，上限之外用 `length()` 代替 |
 | `R/prepare.R` | `sdv_env_table()` 拆出 `sdv_env_records()` 返回 list，供清单表和 `r.inventory` 共用 |
@@ -141,7 +141,7 @@ R 忙着跑长计算时所有请求都没有回应；SDV 在节点上显示 "R b
 
 ---
 
-## 8. 待你决定
+## 8. 决定（已按推荐选项实现）
 
 1. 新端口 53211 加独立 `RStudioBridge` 类，还是把 `SasStudioBridge` 改成多客户端？我选前者。
 2. SDV 启动即监听（默认 on），还是像 SAS Studio 那样要用户在 File 菜单里手动开？我选默认 on，Options 里可关。
@@ -149,3 +149,14 @@ R 忙着跑长计算时所有请求都没有回应；SDV 在节点上显示 "R b
 4. jsonlite 进 Imports，还是手写 JSON？我倾向 Imports jsonlite。
 5. v1 只列全局环境；attached 包、`sys.frames` 留到以后。
 6. 清单上限 5000 个对象，`object.size()` 只对 length ≤ 1e5 的 list 计算。
+
+---
+
+## 9. 实现备注（2026-11-02）
+
+- SDV 侧没有任何心跳超时：R 跑长计算时连 pong 都答不了，只有 TCP 断开才算断线。每 30 s 的 ping 只刷新 lastSeen。
+- 节点断线后灰显 "(disconnected)" 60 s 再移除；同一 session id 重连时新 socket 静默顶替旧的，不发 sessionDisconnected。
+- `r.open` 的确认超时默认 2 s（`sdv.open_timeout`），超时回落到 `open -b`。测试里设 0.5 s。
+- 本机 Homebrew R 对 OpenSSL 4 编不过 `websocket`（AsioHeaders 的 rfc2818_verification 用了不透明的 ASN1 结构）；用 `PKG_CONFIG_PATH=/opt/homebrew/opt/openssl@3/lib/pkgconfig` 装。CRAN 二进制用户不受影响。
+- 测试：SDV `SASHELPER_TEST_CASE=rstudiobridge`（11 例，含 MainWindow 树和快照）；R `testthat::test_local(filter = "bridge")`（httpuv 假 Viewer）。tests/main.cpp 全局设 `SDV_NO_RSTUDIO_BRIDGE=1`，测试窗口不抢 53211。
+- 真机 E2E（Rscript 用 `later::run_now()` 自己泵事件循环）：连接 → 树节点 → 新变量出现 → `sdv_view(mtcars)` 走 `r.open` 打开标签页 → `sdv_disconnect()` 节点灰显，全部通过。

@@ -37,6 +37,7 @@ You also need StatDataViewer itself, on macOS or Windows.
 | Addins menu / Command Palette (⇧⌘P) | Search for "StatDataViewer": one object, the global environment, or a prompt to type a name or expression. |
 | `View(x)` and clicking a name in the Environment pane | Turn on with `sdv::sdv_use_as_viewer(TRUE)`; `FALSE` restores RStudio's viewer. |
 | Console | `sdv::sdv_view(x)` for one object, `sdv::sdv_view_env()` for the global environment, or `library(sdv)` first and drop the `sdv::`. |
+| StatDataViewer's own Library tree | Run `sdv::sdv_connect()` once per session; the session's objects appear under "RStudio: <project>" and stay current. |
 
 Every exported function starts with `sdv_`, so `library(sdv)` does not mask
 functions from other packages.
@@ -70,6 +71,39 @@ have no click target in RStudio at all. Send those with the shortcut, the
 Addins menu or `sdv_view(x)`. To turn the `View()` takeover on in every
 session, add the snippet that `sdv_use_as_viewer()` prints to your
 `~/.Rprofile`.
+
+## Live in StatDataViewer's tree
+
+```r
+sdv::sdv_connect()
+```
+
+connects this R session to the running StatDataViewer. The app then shows the
+session as **RStudio: <project>** in its Library tree with every object of the
+global environment under it, refreshed after each command you run; a
+double-click there opens a snapshot of the object, and the right-click menu
+refreshes the list. While connected, the shortcut, the addins and `View()`
+send their objects over the connection too, and the viewer brings itself to
+the Space you are working on. Nothing else changes: if the app is not running
+the package retries quietly in the background, and every function keeps
+working through files as before. `sdv_disconnect()` ends it,
+`sdv_connected()` tells.
+
+It needs the packages websocket and later, which are not installed with sdv:
+`install.packages(c("websocket", "later"))`. To connect in every session, add
+to `~/.Rprofile`:
+
+```r
+setHook("rstudio.sessionInit", function(newSession) {
+  if (requireNamespace("sdv", quietly = TRUE)) sdv::sdv_connect(quiet = TRUE)
+}, action = "append")
+```
+
+StatDataViewer listens on port 53211 (Options > RStudio, where a token can be
+set too); `options(sdv.port = ..., sdv.token = ...)` or the `SDV_TOKEN`
+environment variable match it from R. Only one thing ever runs in your
+session on the viewer's behalf: `get()` of the object you double-clicked,
+converted and written like any other send.
 
 ## The whole environment
 
@@ -122,6 +156,9 @@ converted first:
 | `sdv.view_types` | `"all"` (default) or `"tabular"`: which objects `View()` sends |
 | `sdv.max_text_lines` | Maximum number of lines in text output |
 | `sdv.list_max_rows` | Maximum number of rows when a list is shown as a tree |
+| `sdv.port`, `sdv.token` | StatDataViewer's RStudio port (53211) and token for `sdv_connect()` |
+| `sdv.inventory_max` | Most objects listed in the viewer's tree (5000) |
+| `sdv.open_timeout` | Seconds to wait for the viewer to acknowledge a sent object before falling back to `open` (2) |
 
 ## How it works
 

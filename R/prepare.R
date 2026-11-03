@@ -233,28 +233,35 @@ sdv_flatten_list <- function(x, name = "x", max_depth = 6L,
 # object with the pane's category (Data / Values / Functions), class,
 # dimensions, size and the first line of str() as a one-line description.
 sdv_env_table <- function(e) {
+  recs <- sdv_env_records(e)
+  col <- function(f, fv) vapply(recs, function(r) r[[f]], fv)
+  cols <- list(name = col("name", character(1)),
+               kind = col("kind", character(1)),
+               class = col("class", character(1)),
+               dim = col("dim", character(1)),
+               size = col("size", character(1)),
+               value = col("value", character(1)),
+               type = col("type", character(1)),
+               size_bytes = col("size_bytes", double(1)))
+  sdv_make_df(lapply(cols, sdv_bare), length(recs))
+}
+
+# One record per object of `e`, sorted by name; the bridge sends these too.
+# object.size() walks a list, so very long lists report no size.
+sdv_env_records <- function(e) {
   nms <- sort(ls(e, all.names = FALSE))
-  info <- lapply(nms, function(nm) {
+  lapply(nms, function(nm) {
     if (bindingIsActive(nm, e)) {
-      return(list(kind = "Values", class = "active binding", type = "", dim = "",
+      return(list(name = nm, kind = "Values", class = "active binding", type = "", dim = "",
                   size = "", size_bytes = NA_real_, value = "<active binding>"))
     }
     v <- get(nm, envir = e, inherits = FALSE)
-    bytes <- as.double(utils::object.size(v))
-    list(kind = sdv_env_kind(v), class = paste(class(v), collapse = "/"), type = typeof(v),
-         dim = sdv_dim_text(v), size = sdv_size_text(bytes), size_bytes = bytes,
-         value = sdv_str_line(v))
+    bytes <- if (is.list(v) && !is.data.frame(v) && length(v) > 1e5) NA_real_
+             else as.double(utils::object.size(v))
+    list(name = nm, kind = sdv_env_kind(v), class = paste(class(v), collapse = "/"),
+         type = typeof(v), dim = sdv_dim_text(v), size = sdv_size_text(bytes),
+         size_bytes = bytes, value = sdv_str_line(v))
   })
-  get_col <- function(f, fv) vapply(info, function(i) i[[f]], fv)
-  cols <- list(name = nms,
-               kind = get_col("kind", character(1)),
-               class = get_col("class", character(1)),
-               dim = get_col("dim", character(1)),
-               size = get_col("size", character(1)),
-               value = get_col("value", character(1)),
-               type = get_col("type", character(1)),
-               size_bytes = get_col("size_bytes", double(1)))
-  sdv_make_df(lapply(cols, sdv_bare), length(nms))
 }
 
 # RStudio's Environment pane groups: Data (tabular or hierarchical objects),

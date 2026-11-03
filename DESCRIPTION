@@ -1,7 +1,7 @@
 Package: sdv
 Type: Package
 Title: Open R Objects in 'StatDataViewer' from 'RStudio'
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: person("Xiaoguang", "Yan", email = "yanxiaoguang@gmail.com", role = c("aut", "cre"))
 Description: An 'RStudio' addin that sends objects from the R session (data
     frames, matrices, tables, vectors, lists, time series, functions, models,
@@ -18,8 +18,9 @@ SystemRequirements: StatDataViewer (macOS or Windows),
     <https://statdataviewer.com/>
 Encoding: UTF-8
 Depends: R (>= 4.1)
-Imports: rstudioapi, stats, utils, methods
-Suggests: testthat (>= 3.0.0), withr, bit64, zoo, xts
+Imports: jsonlite, rstudioapi, stats, utils, methods
+Suggests: testthat (>= 3.0.0), withr, bit64, zoo, xts, websocket, later,
+    httpuv
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.1.0

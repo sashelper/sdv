@@ -1,3 +1,14 @@
+# sdv 0.3.0
+
+* `sdv_connect()`: a live connection to StatDataViewer. The app lists this
+  session's global environment in its Library tree, refreshed after every
+  command, and opens snapshots on double-click; objects sent from RStudio
+  travel over the connection and the viewer comes to the current Space.
+  Needs the Suggests websocket and later; without a connection nothing
+  changes. `sdv_disconnect()`, `sdv_connected()`, options `sdv.port`,
+  `sdv.token`, `sdv.inventory_max`, `sdv.open_timeout`.
+* jsonlite is imported.
+
 # sdv 0.2.0
 
 * `sdv_use_as_viewer()` now sends every object to StatDataViewer by default:

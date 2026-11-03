@@ -29,6 +29,7 @@ pak::pak("sashelper/sdv")
 | Addins 菜单 / 命令面板（⇧⌘P） | 搜索 “StatDataViewer”：发送一个对象、列出全局环境，或弹出输入框输入对象名 / 表达式 |
 | `View(x)` / 在 Environment 面板里点对象名 | 运行 `sdv::sdv_use_as_viewer(TRUE)` 开启，用 `FALSE` 恢复 |
 | 控制台 | `sdv::sdv_view(x)` 发送一个对象，`sdv::sdv_view_env()` 列出全局环境；先 `library(sdv)` 就不用写 `sdv::` |
+| StatDataViewer 自己的 Library 树 | 每个会话运行一次 `sdv::sdv_connect()`，对象出现在 “RStudio: 项目名” 节点下并保持最新 |
 
 所有函数都以 `sdv_` 开头，所以 `library(sdv)` 之后不会和其他包的函数重名。
 
@@ -43,6 +44,24 @@ pak::pak("sashelper/sdv")
 不只是数据框，每种对象都能打开（见下面的类型表）：函数显示为 R 代码，列表显示为树形表，模型和 S4 对象显示为文本。快捷键和 Addins 菜单接受任何对象；`sdv_use_as_viewer(TRUE)` 开启后 `View()` 也一样，想让函数、列表、模型留在 RStudio 自带的查看器里，传 `types = "tabular"`。
 
 RStudio 没有开放给插件往右键菜单里加菜单项的接口，所以这里用“接管 `View()`”来代替右键菜单：在 Environment 面板里点对象名，RStudio 执行的就是 `View()`。但 RStudio 只把 **Data** 行（数据框、矩阵、列表、环境、S4 对象、模型）和 **Function** 行的名字做成可点击的；**Values** 行（向量、因子、单个值）在 RStudio 里根本没有可点的地方，这类对象请用快捷键、Addins 菜单或 `sdv_view(x)` 发送。要让每个会话都自动开启接管，把 `sdv_use_as_viewer()` 打印出的那段代码加到 `~/.Rprofile` 里。
+
+## 直接进 StatDataViewer 的左侧树
+
+```r
+sdv::sdv_connect()
+```
+
+把当前 R 会话连到正在运行的 StatDataViewer。之后它的 Library 树里会出现 **RStudio: 项目名** 节点，下面是全局环境里的每个对象，你每跑一条命令就自动更新；双击打开该对象当时的快照，右键可以刷新。连接期间，快捷键、Addins 和 `View()` 发送的对象也走这条连接，Viewer 会自己跳到你正在用的 Space。其他都不变：App 没开时后台安静地重试，所有函数照旧通过文件工作。`sdv_disconnect()` 断开，`sdv_connected()` 查询。
+
+需要 websocket 和 later 两个包，sdv 不会自动装：`install.packages(c("websocket", "later"))`。想每个会话都自动连接，加到 `~/.Rprofile`：
+
+```r
+setHook("rstudio.sessionInit", function(newSession) {
+  if (requireNamespace("sdv", quietly = TRUE)) sdv::sdv_connect(quiet = TRUE)
+}, action = "append")
+```
+
+StatDataViewer 监听 53211 端口（Options > RStudio 里可改，也可以设 token）；R 侧用 `options(sdv.port = ..., sdv.token = ...)` 或环境变量 `SDV_TOKEN` 对上。Viewer 在你的会话里只会做一件事：对你双击的对象 `get()`，然后像平时发送一样转换、写文件。
 
 ## 整个环境
 
@@ -85,6 +104,9 @@ StatDataViewer 读 `.rds` 用的是 librdata，能显示的类型有限。所以
 | `sdv.view_types` | `"all"`（默认）或 `"tabular"`，决定 `View()` 接管的范围 |
 | `sdv.max_text_lines` | 文本输出的最大行数 |
 | `sdv.list_max_rows` | 列表展开成树形表时的最大行数 |
+| `sdv.port`、`sdv.token` | `sdv_connect()` 用的 StatDataViewer 端口（53211）和 token |
+| `sdv.inventory_max` | Viewer 树里最多列出的对象数（5000） |
+| `sdv.open_timeout` | 发送对象后等 Viewer 确认的秒数，超时回落到 `open`（2） |
 
 ## 工作原理
 

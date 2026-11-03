@@ -17,9 +17,17 @@ sdv_open_file <- function(path) {
 }
 
 sdv_launch <- function(path) {
+  path <- normalizePath(path, mustWork = TRUE)
+  # Connected to the viewer (sdv_connect()): hand the file over the connection,
+  # and let the viewer bring itself to the user. Falls through to `open` when
+  # the viewer does not acknowledge in time.
+  ext <- tolower(tools::file_ext(path))
+  name <- sub("\\.[^.]*$", "", basename(path))
+  if (sdv_bridge_open_file(path, name, if (ext == "rds") "table" else "text")) {
+    return(invisible(TRUE))
+  }
   launcher <- sdv_opt("launcher")
   if (is.function(launcher)) return(invisible(launcher(path)))
-  path <- normalizePath(path, mustWork = TRUE)
   if (.Platform$OS.type == "windows") return(sdv_launch_windows(path))
   if (identical(Sys.info()[["sysname"]], "Darwin")) return(sdv_launch_mac(path))
   stop("StatDataViewer integration supports macOS and Windows only. File saved at: ",
