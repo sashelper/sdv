@@ -15,12 +15,26 @@ local_stub_view <- function(env = parent.frame()) {
   seen
 }
 
-test_that("View() routes tabular objects to StatDataViewer and others to the original", {
+test_that("View() routes every object to StatDataViewer by default", {
   seen <- local_stub_view()
   calls <- local_launcher()
   expect_message(sdv_use_as_viewer(TRUE), "sdv_use_as_viewer\\(FALSE\\)")
   expect_true(sdv:::sdv_is_our_view(get("View", envir = as.environment("package:utils"))))
+  expect_identical(getOption("sdv.view_types"), "all")
 
+  View(mtcars)
+  f <- function(x) x
+  View(f)
+  View(list(a = 1, b = "x"), "cfg")
+  expect_identical(basename(calls$paths), c("mtcars.rds", "f.R", "cfg.rds"))
+  expect_length(seen$calls, 0)
+})
+
+test_that("types = 'tabular' leaves functions to the original viewer", {
+  seen <- local_stub_view()
+  calls <- local_launcher()
+  sdv_use_as_viewer(TRUE, types = "tabular", quiet = TRUE)
+  withr::defer(options(sdv.view_types = "all"))
   View(mtcars)
   expect_identical(basename(calls$paths), "mtcars.rds")
 
@@ -32,14 +46,11 @@ test_that("View() routes tabular objects to StatDataViewer and others to the ori
   expect_identical(seen$calls[[1]]$title, "f")
 })
 
-test_that("types = 'all' sends everything", {
-  seen <- local_stub_view()
-  calls <- local_launcher()
-  sdv_use_as_viewer(TRUE, types = "all", quiet = TRUE)
-  withr::defer(options(sdv.view_types = "tabular"))
-  View(function(x) x, "fn")
-  expect_identical(basename(calls$paths), "fn.R")
-  expect_length(seen$calls, 0)
+test_that("the .Rprofile snippet names only the non-default type", {
+  expect_match(sdv:::sdv_rprofile_snippet("all"),
+               "sdv_use_as_viewer(TRUE, quiet = TRUE)", fixed = TRUE)
+  expect_match(sdv:::sdv_rprofile_snippet("tabular"),
+               'sdv_use_as_viewer(TRUE, types = "tabular", quiet = TRUE)', fixed = TRUE)
 })
 
 test_that("disabling restores the original binding only when it is ours", {

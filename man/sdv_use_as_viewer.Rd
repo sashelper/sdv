@@ -2,15 +2,16 @@
 % Please edit documentation in R/viewer_override.R
 \name{sdv_use_as_viewer}
 \alias{sdv_use_as_viewer}
-\title{Route View() and the Environment pane's grid icon to StatDataViewer}
+\title{Route View() and the Environment pane to StatDataViewer}
 \usage{
-sdv_use_as_viewer(enable = TRUE, types = c("tabular", "all"), quiet = FALSE)
+sdv_use_as_viewer(enable = TRUE, types = c("all", "tabular"), quiet = FALSE)
 }
 \arguments{
 \item{enable}{\code{TRUE} to enable, \code{FALSE} to restore RStudio's viewer.}
 
-\item{types}{\code{"tabular"} (data frames, matrices, arrays, tables, time
-series, atomic vectors) or \code{"all"}.}
+\item{types}{\code{"all"} (the default) sends every object. \code{"tabular"} sends
+only data frames, matrices, arrays, tables, time series and atomic
+vectors, and leaves functions, lists and models to RStudio's own viewers.}
 
 \item{quiet}{Suppress messages.}
 }
@@ -18,10 +19,14 @@ series, atomic vectors) or \code{"all"}.}
 Whether the override is active, invisibly.
 }
 \description{
-When enabled, \code{View(x)} (and clicking the table icon next to an object in
-RStudio's Environment pane) opens the object in StatDataViewer. Objects
-that are not tabular (functions, lists, environments, ...) still open in
-RStudio unless \code{types = "all"}.
+When enabled, \code{View(x)} opens \code{x} in StatDataViewer whatever \code{x} is:
+data frames, matrices, tables and vectors as data tables, functions as R
+code, lists as trees, models and other objects as text (see
+\code{\link[=sdv_prepare]{sdv_prepare()}}). Clicking an object's name in RStudio's Environment pane
+runs \code{View()} too, so data frames, matrices, lists, environments, models
+and functions open in StatDataViewer from there. Vectors, factors and
+single values are "Values" rows in that pane and have no click target in
+RStudio: send them with the shortcut, the Addins menu or \code{\link[=sdv_view]{sdv_view()}}.
 }
 \details{
 The change lasts for the current R session. To enable it automatically,

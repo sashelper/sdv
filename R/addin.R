@@ -128,3 +128,16 @@ sdv_addin_prompt <- function(default = NULL, error = NULL) {
   if (is.null(ans) || !nzchar(trimws(ans))) return(invisible(NULL))
   sdv_send_text(trimws(ans))
 }
+
+#' Addin: list the global environment's objects in StatDataViewer
+#'
+#' Opens the table made by [sdv_view_env()]: every object of the global
+#' environment with its kind, class, dimensions, size and a one-line
+#' description.
+#' @export
+sdv_addin_env <- function() {
+  sdv_require_rstudio()
+  res <- tryCatch(sdv_view_env(), error = function(e) e)
+  if (inherits(res, "error")) return(sdv_show_error(conditionMessage(res)))
+  invisible(res)
+}

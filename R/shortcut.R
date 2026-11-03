@@ -6,11 +6,21 @@
 # where <config> is $RSTUDIO_CONFIG_HOME, else $XDG_CONFIG_HOME/rstudio or
 # ~/.config/rstudio (%APPDATA%/RStudio on Windows). RStudio reads it at startup.
 
-# Cmd+Shift+V on macOS, Ctrl+Shift+V elsewhere: neither RStudio's commands nor
-# its Ace editor bind it, and V is easy to remember (View).
-sdv_default_key <- function() {
-  if (identical(Sys.info()[["sysname"]], "Darwin")) "Cmd+Shift+V" else "Ctrl+Shift+V"
+# Cmd+Shift+V on macOS, Ctrl+Shift+V elsewhere, V as in View. Recent RStudio
+# versions list that key as "Paste with Indent", but a binding in addins.json
+# takes precedence over RStudio's defaults. The environment addin takes the
+# same key plus Alt: one object with Cmd+Shift+V, every object with
+# Cmd+Alt+Shift+V. Neither Cmd+Alt+Shift+V nor Ctrl+Alt+Shift+V is a default
+# RStudio shortcut. The prompt addin has no default key.
+sdv_default_key <- function(binding = "sdv_addin_view") {
+  mac <- identical(Sys.info()[["sysname"]], "Darwin")
+  switch(binding,
+         sdv_addin_view = if (mac) "Cmd+Shift+V" else "Ctrl+Shift+V",
+         sdv_addin_env = if (mac) "Cmd+Alt+Shift+V" else "Ctrl+Alt+Shift+V",
+         NULL)
 }
+
+.sdv_bindings <- c("sdv_addin_view", "sdv_addin_env", "sdv_addin_prompt")
 
 #' Path of RStudio's addin keybinding file
 #' @return File path (may not exist yet).
@@ -126,18 +136,28 @@ sdv_binding_id <- function(binding) paste0("sdv::", binding)
 #' Assign a keyboard shortcut to a StatDataViewer addin
 #'
 #' Writes RStudio's `keybindings/addins.json` (backing up the previous file to
-#' `addins.json.bak`). Restart RStudio afterwards. The default
-#' Cmd+Shift+V (Ctrl+Shift+V on Windows/Linux) is not used by RStudio's
-#' built-in shortcuts.
-#' @param key Shortcut, e.g. `"Cmd+Shift+V"` or `"Ctrl+Alt+Shift+V"`.
-#' @param binding `"sdv_addin_view"` or `"sdv_addin_prompt"`.
+#' `addins.json.bak`). Restart RStudio afterwards. Call it once per addin:
+#'
+#' | Addin | Default key (macOS; Windows/Linux) |
+#' |---|---|
+#' | `sdv_addin_view`, one object | Cmd+Shift+V; Ctrl+Shift+V |
+#' | `sdv_addin_env`, the whole global environment | Cmd+Alt+Shift+V; Ctrl+Alt+Shift+V |
+#' | `sdv_addin_prompt`, type a name | none, give a `key` |
+#'
+#' A binding here takes precedence over RStudio's default shortcuts. Keys
+#' that RStudio does not use by default include Cmd+Shift+U, X, Q, I and Y
+#' (Ctrl+Shift+ on Windows/Linux).
+#' @param key Shortcut, e.g. `"Cmd+Shift+V"` or `"Ctrl+Alt+Shift+V"`. `NULL`
+#'   takes the addin's default key.
+#' @param binding `"sdv_addin_view"`, `"sdv_addin_env"` or `"sdv_addin_prompt"`.
 #' @param overwrite Take the key even if another addin already uses it.
 #' @return Path of the keybinding file, invisibly.
 #' @export
-sdv_install_shortcut <- function(key = sdv_default_key(),
-                                 binding = c("sdv_addin_view", "sdv_addin_prompt"),
-                                 overwrite = FALSE) {
+sdv_install_shortcut <- function(key = NULL, binding = .sdv_bindings, overwrite = FALSE) {
   binding <- match.arg(binding)
+  if (is.null(key)) key <- sdv_default_key(binding)
+  if (is.null(key)) stop(binding, " has no default key; give one, e.g. \"Cmd+Shift+I\".",
+                         call. = FALSE)
   key <- sdv_normalize_key(key)
   path <- sdv_keybindings_path()
   current <- sdv_read_flat_json(path)
@@ -175,7 +195,7 @@ sdv_install_shortcut <- function(key = sdv_default_key(),
 #' Remove a StatDataViewer addin shortcut
 #' @inheritParams sdv_install_shortcut
 #' @export
-sdv_remove_shortcut <- function(binding = c("sdv_addin_view", "sdv_addin_prompt")) {
+sdv_remove_shortcut <- function(binding = .sdv_bindings) {
   binding <- match.arg(binding)
   path <- sdv_keybindings_path()
   current <- sdv_read_flat_json(path)

@@ -4,16 +4,13 @@
 \alias{sdv_install_shortcut}
 \title{Assign a keyboard shortcut to a StatDataViewer addin}
 \usage{
-sdv_install_shortcut(
-  key = sdv_default_key(),
-  binding = c("sdv_addin_view", "sdv_addin_prompt"),
-  overwrite = FALSE
-)
+sdv_install_shortcut(key = NULL, binding = .sdv_bindings, overwrite = FALSE)
 }
 \arguments{
-\item{key}{Shortcut, e.g. \code{"Cmd+Shift+V"} or \code{"Ctrl+Alt+Shift+V"}.}
+\item{key}{Shortcut, e.g. \code{"Cmd+Shift+V"} or \code{"Ctrl+Alt+Shift+V"}. \code{NULL}
+takes the addin's default key.}
 
-\item{binding}{\code{"sdv_addin_view"} or \code{"sdv_addin_prompt"}.}
+\item{binding}{\code{"sdv_addin_view"}, \code{"sdv_addin_env"} or \code{"sdv_addin_prompt"}.}
 
 \item{overwrite}{Take the key even if another addin already uses it.}
 }
@@ -22,7 +19,18 @@ Path of the keybinding file, invisibly.
 }
 \description{
 Writes RStudio's \code{keybindings/addins.json} (backing up the previous file to
-\code{addins.json.bak}). Restart RStudio afterwards. The default
-Cmd+Shift+V (Ctrl+Shift+V on Windows/Linux) is not used by RStudio's
-built-in shortcuts.
+\code{addins.json.bak}). Restart RStudio afterwards. Call it once per addin:
+}
+\details{
+\tabular{ll}{
+   Addin \tab Default key (macOS; Windows/Linux) \cr
+   \code{sdv_addin_view}, one object \tab Cmd+Shift+V; Ctrl+Shift+V \cr
+   \code{sdv_addin_env}, the whole global environment \tab Cmd+Alt+Shift+V; Ctrl+Alt+Shift+V \cr
+   \code{sdv_addin_prompt}, type a name \tab none, give a \code{key} \cr
+}
+
+
+A binding here takes precedence over RStudio's default shortcuts. Keys
+that RStudio does not use by default include Cmd+Shift+U, X, Q, I and Y
+(Ctrl+Shift+ on Windows/Linux).
 }

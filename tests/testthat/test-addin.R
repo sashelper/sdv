@@ -44,7 +44,21 @@ test_that("display names come from simple expressions", {
   expect_identical(nm("mtcars |>\n  subset(cyl == 4)"), "selection")
 })
 
-test_that("the addin needs RStudio", {
+test_that("sdv_view_env writes the inventory under the environment's name", {
+  calls <- local_launcher()
+  expect_identical(basename(sdv_view_env()), "Global_Environment.rds")
+  expect_identical(basename(sdv_view_env(asNamespace("sdv"))), "sdv.rds")
+  e <- new.env()
+  assign("x", 1, envir = e)
+  p <- sdv_view_env(e)
+  expect_identical(basename(p), "e.rds")
+  expect_identical(readRDS(p)$name, "x")
+  expect_length(calls$paths, 3)
+  expect_error(sdv_view_env(1), "is.environment")
+})
+
+test_that("the addins need RStudio", {
   skip_if(rstudioapi::isAvailable())
   expect_error(sdv_addin_view(), "RStudio")
+  expect_error(sdv_addin_env(), "RStudio")
 })

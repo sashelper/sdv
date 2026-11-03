@@ -52,12 +52,33 @@ test_that("conflicts are detected unless overwrite = TRUE", {
                    sdv:::sdv_normalize_key(sdv:::sdv_default_key()))
 })
 
-test_that("the default key is two modifiers plus V", {
+test_that("the default keys are Shift+V for one object and Alt+Shift+V for the environment", {
+  mac <- Sys.info()[["sysname"]] == "Darwin"
   key <- sdv:::sdv_default_key()
-  expect_identical(key, if (Sys.info()[["sysname"]] == "Darwin") "Cmd+Shift+V" else "Ctrl+Shift+V")
+  expect_identical(key, if (mac) "Cmd+Shift+V" else "Ctrl+Shift+V")
   # Stored in RStudio's own modifier order (Ctrl, Alt, Shift, Cmd).
-  expect_identical(sdv:::sdv_normalize_key(key),
-                   if (Sys.info()[["sysname"]] == "Darwin") "Shift+Cmd+V" else "Ctrl+Shift+V")
+  expect_identical(sdv:::sdv_normalize_key(key), if (mac) "Shift+Cmd+V" else "Ctrl+Shift+V")
+  env_key <- sdv:::sdv_default_key("sdv_addin_env")
+  expect_identical(env_key, if (mac) "Cmd+Alt+Shift+V" else "Ctrl+Alt+Shift+V")
+  expect_identical(sdv:::sdv_normalize_key(env_key),
+                   if (mac) "Alt+Shift+Cmd+V" else "Ctrl+Alt+Shift+V")
+  expect_null(sdv:::sdv_default_key("sdv_addin_prompt"))
+})
+
+test_that("the environment addin binds its own key and the prompt needs one", {
+  path <- local_config()
+  expect_message(sdv_install_shortcut(binding = "sdv_addin_env"), "Bound")
+  b <- sdv:::sdv_read_flat_json(path)
+  expect_identical(b[["sdv::sdv_addin_env"]],
+                   sdv:::sdv_normalize_key(sdv:::sdv_default_key("sdv_addin_env")))
+  expect_error(sdv_install_shortcut(binding = "sdv_addin_prompt"), "no default key")
+  expect_message(sdv_install_shortcut("Cmd+Shift+I", binding = "sdv_addin_prompt"), "Bound")
+  # Both addins keep their keys side by side.
+  expect_message(sdv_install_shortcut(), "Bound")
+  b <- sdv:::sdv_read_flat_json(path)
+  expect_identical(sort(names(b)), c("sdv::sdv_addin_env", "sdv::sdv_addin_prompt", "sdv::sdv_addin_view"))
+  expect_message(sdv_remove_shortcut("sdv_addin_env"), "Removed")
+  expect_false("sdv::sdv_addin_env" %in% names(sdv:::sdv_read_flat_json(path)))
 })
 
 test_that("files we don't understand are left alone", {

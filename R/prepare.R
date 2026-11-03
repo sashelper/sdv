@@ -229,28 +229,66 @@ sdv_flatten_list <- function(x, name = "x", max_depth = 6L,
   sdv_make_df(lapply(cols, sdv_bare), n)
 }
 
-# Environment -> inventory table like RStudio's Environment pane.
+# Environment -> inventory table like RStudio's Environment pane: one row per
+# object with the pane's category (Data / Values / Functions), class,
+# dimensions, size and the first line of str() as a one-line description.
 sdv_env_table <- function(e) {
   nms <- sort(ls(e, all.names = FALSE))
   info <- lapply(nms, function(nm) {
     if (bindingIsActive(nm, e)) {
-      return(list(class = "active binding", type = "", length = NA_integer_, size = NA_real_,
-                  preview = ""))
+      return(list(kind = "Values", class = "active binding", type = "", dim = "",
+                  size = "", size_bytes = NA_real_, value = "<active binding>"))
     }
     v <- get(nm, envir = e, inherits = FALSE)
-    list(class = paste(class(v), collapse = "/"), type = typeof(v),
-         length = as.integer(length(v)),
-         size = as.double(utils::object.size(v)),
-         preview = sdv_preview(v))
+    bytes <- as.double(utils::object.size(v))
+    list(kind = sdv_env_kind(v), class = paste(class(v), collapse = "/"), type = typeof(v),
+         dim = sdv_dim_text(v), size = sdv_size_text(bytes), size_bytes = bytes,
+         value = sdv_str_line(v))
   })
   get_col <- function(f, fv) vapply(info, function(i) i[[f]], fv)
   cols <- list(name = nms,
+               kind = get_col("kind", character(1)),
                class = get_col("class", character(1)),
+               dim = get_col("dim", character(1)),
+               size = get_col("size", character(1)),
+               value = get_col("value", character(1)),
                type = get_col("type", character(1)),
-               length = get_col("length", integer(1)),
-               size_bytes = get_col("size", double(1)),
-               preview = get_col("preview", character(1)))
+               size_bytes = get_col("size_bytes", double(1)))
   sdv_make_df(lapply(cols, sdv_bare), length(nms))
+}
+
+# RStudio's Environment pane groups: Data (tabular or hierarchical objects),
+# Functions, and Values for everything else.
+sdv_env_kind <- function(v) {
+  if (is.function(v)) return("Functions")
+  if (is.data.frame(v) || is.list(v) || is.environment(v) || isS4(v) ||
+      length(dim(v)) >= 2L) return("Data")
+  "Values"
+}
+
+# "200 x 4" for a data frame or matrix, "2 x 3 x 4" for an array, the length
+# otherwise; nothing for functions.
+sdv_dim_text <- function(v) {
+  if (is.function(v)) return("")
+  if (is.data.frame(v)) return(sprintf("%d x %d", nrow(v), length(v)))
+  d <- dim(v)
+  if (!is.null(d)) return(paste(d, collapse = " x "))
+  as.character(length(v))
+}
+
+sdv_size_text <- function(bytes) {
+  if (is.na(bytes)) return("")
+  format(structure(bytes, class = "object_size"), units = "auto")
+}
+
+# The first line of str(): 'num [1:200] 57 57 64 61 ...', 'function (df, by = "ARM")',
+# 'List of 3', "'data.frame': 200 obs. of 4 variables:".
+sdv_str_line <- function(v) {
+  out <- tryCatch(utils::capture.output(
+    utils::str(v, max.level = 0L, give.attr = FALSE, vec.len = 4L)),
+    error = function(e) character())
+  line <- if (length(out)) gsub("[ \t]+", " ", trimws(out[1])) else ""
+  if (!nzchar(line)) sdv_preview(v) else sdv_truncate(line, 200L)
 }
 
 # ---- text helpers -----------------------------------------------------------

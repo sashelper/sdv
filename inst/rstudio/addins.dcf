@@ -7,3 +7,8 @@ Name: Open object in StatDataViewer...
 Description: Type an object name or R expression to send to StatDataViewer.
 Binding: sdv_addin_prompt
 Interactive: false
+
+Name: Open Global Environment in StatDataViewer
+Description: List every object in the global environment (kind, class, dimensions, size, value) in StatDataViewer.
+Binding: sdv_addin_env
+Interactive: false

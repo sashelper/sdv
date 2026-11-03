@@ -7,7 +7,7 @@
 
 .sdv_default_options <- list(
   sdv.bundle_id = "com.statdataviewer",
-  sdv.view_types = "tabular",
+  sdv.view_types = "all",
   sdv.max_text_lines = 100000L,
   sdv.list_max_rows = 10000L
 )

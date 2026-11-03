@@ -4,10 +4,10 @@
 \alias{sdv_remove_shortcut}
 \title{Remove a StatDataViewer addin shortcut}
 \usage{
-sdv_remove_shortcut(binding = c("sdv_addin_view", "sdv_addin_prompt"))
+sdv_remove_shortcut(binding = .sdv_bindings)
 }
 \arguments{
-\item{binding}{\code{"sdv_addin_view"} or \code{"sdv_addin_prompt"}.}
+\item{binding}{\code{"sdv_addin_view"}, \code{"sdv_addin_env"} or \code{"sdv_addin_prompt"}.}
 }
 \description{
 Remove a StatDataViewer addin shortcut

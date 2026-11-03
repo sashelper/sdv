@@ -116,6 +116,33 @@ test_that("vectors, integer64 and lists are tabulated", {
   expect_identical(n$preview[n$path == "cfg$b$d"], "<data.frame [32 x 11]>")
 })
 
+test_that("an environment becomes an inventory like the Environment pane", {
+  e <- new.env()
+  assign("df", data.frame(a = 1:200, b = "x"), envir = e)
+  assign("m", matrix(1:6, 2), envir = e)
+  assign("v", c(1.5, 2.5), envir = e)
+  assign("n", 3L, envir = e)
+  assign("cfg", list(a = 1, b = list(c = 2)), envir = e)
+  assign("f", function(x, y = 2) x + y, envir = e)
+  assign("fit", lm(mpg ~ wt, data = mtcars), envir = e)
+  makeActiveBinding("ab", function() 1, e)
+  d <- sdv_prepare(e, "env")$data
+  expect_identical(names(d), c("name", "kind", "class", "dim", "size", "value", "type", "size_bytes"))
+  expect_identical(d$name, c("ab", "cfg", "df", "f", "fit", "m", "n", "v"))
+  expect_identical(d$kind, c("Values", "Data", "Data", "Functions", "Data", "Data", "Values", "Values"))
+  expect_identical(d$dim, c("", "2", "200 x 2", "", "12", "2 x 3", "1", "2"))
+  expect_match(d$value[d$name == "df"], "^'data.frame': 200 obs. of 2 variables")
+  expect_match(d$value[d$name == "f"], "^function \\(x, y = 2\\)")
+  expect_identical(d$value[d$name == "cfg"], "List of 2")
+  expect_identical(d$value[d$name == "fit"], "List of 12")
+  expect_match(d$value[d$name == "v"], "^num \\[1:2\\] 1.5 2.5")
+  expect_identical(d$value[d$name == "ab"], "<active binding>")
+  expect_true(is.na(d$size_bytes[d$name == "ab"]))
+  expect_match(d$size[d$name == "df"], "Kb$")
+  expect_identical(d$size_bytes[d$name == "n"], as.double(utils::object.size(3L)))
+  expect_true(isTRUE(sdv_is_clean(d)))
+})
+
 test_that("functions and other objects become text", {
   f <- sdv_prepare(function(x, y = 2) x + y, "add")
   expect_identical(f$ext, "R")

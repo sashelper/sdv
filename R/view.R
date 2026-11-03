@@ -34,3 +34,33 @@ sdv_view <- function(x, name = NULL, open = TRUE) {
   if (open) sdv_launch(path)
   invisible(path)
 }
+
+#' Open an environment's object list in StatDataViewer
+#'
+#' One row per object, like RStudio's Environment pane: name, kind (Data,
+#' Values or Functions), class, dimensions, size and a one-line description.
+#' Sort and filter the table in StatDataViewer; send it again after the
+#' environment has changed. The "Open Global Environment in StatDataViewer"
+#' addin calls this for the global environment.
+#'
+#' @param env The environment to list; the global environment by default.
+#' @param name Tab title. Defaults to "Global Environment", or the
+#'   environment's name.
+#' @param open If `FALSE`, only write the file.
+#' @return The path of the written file, invisibly.
+#' @examples
+#' \dontrun{
+#' sdv_view_env()
+#' sdv_view_env(environment(lm))
+#' }
+#' @export
+sdv_view_env <- function(env = globalenv(), name = NULL, open = TRUE) {
+  stopifnot(is.environment(env))
+  if (is.null(name)) {
+    name <- if (identical(env, globalenv())) "Global Environment" else environmentName(env)
+    if (!nzchar(name)) name <- deparse1(substitute(env), collapse = " ")
+  }
+  path <- sdv_write(sdv_table(sdv_env_table(env), name))
+  if (open) sdv_launch(path)
+  invisible(path)
+}
